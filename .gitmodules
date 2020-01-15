@@ -1,0 +1,3 @@
+[submodule "dependencies/Exception"]
+	path = dependencies/Exception
+	url = https://github.com/je-s/Exception
