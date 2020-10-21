@@ -23,6 +23,7 @@
 #include <fstream> // std::ifstream
 #include <string> // std::string, std::getline, std::string::npos
 #include <algorithm> // std::count
+#include <typeinfo> // typeid
 
 // Custom Exception Classes
 #include "ConfigExceptions.hpp" // ConfigMalformedException, ConfigMissingException, ConfigKeyNotFoundException
@@ -49,7 +50,8 @@ private:
     std::string trimLine( std::string line );
     bool isComment( std::string line );
     void parseLine( std::string line );
-    void parseData( std::string fileName );
+    void parseFile( std::string fileName );
+    template <class T> T getNumericValue( std::string key );
 
 public:
     // Variables
@@ -63,7 +65,6 @@ public:
 
     // Methods
     std::string getString( std::string key );
-    bool getBool( std::string key );
     int getInteger( std::string key );
     unsigned int getUnsignedInteger( std::string key );
     long getLong( std::string key );
@@ -73,6 +74,7 @@ public:
     float getFloat( std::string key );
     double getDouble( std::string key );
     long double getLongDouble( std::string key );
+    bool getBool( std::string key );
 };
 
 #endif // CONFIG_HPP

@@ -24,6 +24,7 @@ In order to compile Config, following files need to be compiled and linked:
 * The key starts at the beginning of the line, and lasts until the first occurence of our delimiter.
     * The standard delimiter is `=`.
 * The value starts after the delimiter and lasts until the end of the line, which is marked by any EOL character (`\n` or `\r`).
+    * A value can also be empty.
 * All keys and values are trimmed off their leading and trailing spaces. Spaces in between are being preserved.
 * A valid commment gets introduced whenever the first non-space character (after trimming) equals the comment delimiter.
     * The standard comment delimiter is `#`.
@@ -42,6 +43,7 @@ ulonglong=18446744073709551615
 float=1.337
 double=1.337
 ldouble=-1.337
+bool=0
 ```
 
 ## Basic usage
@@ -59,6 +61,7 @@ ldouble=-1.337
     8. `float getFloat( std::string key )`
     9. `double getDouble( std::string key )`
     10. `long double getLongDouble( std::string key )`
+    11. `bool getBool( std::string key ) // This tries to convert an integer to a bool (0 = false, everything else = true)`
 3. Catch the exceptions to handle possible errors while using Config:
     1. `ConfigMalformedException`
     2. `ConfigMissingException`

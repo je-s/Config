@@ -20,7 +20,7 @@ Config::Config( std::string fileName, char delimiter, char commentDelimiter )
 {
     setDelimiter( delimiter );
     setCommentDelimiter( commentDelimiter );
-    parseData( fileName );
+    parseFile( fileName );
 }
 
 void Config::setDelimiter( char delimiter )
@@ -49,24 +49,20 @@ bool Config::fileExists( std::string fileName )
     {
         return true;
     }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 bool Config::isFormatValid( std::string line )
 {
     line = trimLine( line );
 
-    if ( std::count( line.begin(), line.end(), getDelimiter() ) == 1 && line.find( getDelimiter() ) != 0 && line.find( getDelimiter() ) != ( line.length() - 1 ) )
+    if ( line.find( getDelimiter() ) != 0 )
     {
         return true;
     }
-    else
-    {
-        return false;
-    }   
+
+    return false;
 }
 
 bool Config::elementExists( std::string key )
@@ -76,22 +72,20 @@ bool Config::elementExists( std::string key )
     {
         return true;
     }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 std::string Config::trimLine( std::string line )
 {
-    size_t firstChar = line.find_first_not_of(' ');
+    size_t firstChar = line.find_first_not_of( ' ' );
 
     if ( firstChar == std::string::npos )
     {
         return "";
     }
 
-    size_t lastChar = line.find_last_not_of(' ');
+    size_t lastChar = line.find_last_not_of( ' ' );
 
     return line.substr( firstChar, ( lastChar - firstChar + 1 ) );
 }
@@ -120,14 +114,14 @@ void Config::parseLine( std::string line )
     if ( isFormatValid( line ) )
     {
         std::string key, value;
-        std::istringstream issLine( line );
+        std::istringstream stringstreamLine( line );
 
         // Parse the line until we fetch our delimiter, and trim it.
-        std::getline( issLine, key, getDelimiter() );
+        std::getline( stringstreamLine, key, getDelimiter() );
         key = trimLine( key );
 
         // Parse the rest of the line and trim it.
-        std::getline( issLine, value );
+        std::getline( stringstreamLine, value );
         std::size_t lineEnd = value.find_first_of( "\r\n" );
 
         if ( lineEnd != std::string::npos )
@@ -153,7 +147,7 @@ void Config::parseLine( std::string line )
     }
 }
 
-void Config::parseData( std::string fileName )
+void Config::parseFile( std::string fileName )
 {
     if ( !fileExists( fileName ) )
     {
@@ -196,187 +190,108 @@ std::string Config::getString( std::string key )
     return (*this)[key];
 }
 
-bool Config::getBool( std::string key )
+template <class T>
+T Config::getNumericValue( std::string key )
 {
-    return getInteger( key );
+    T value;
+
+    try
+    {
+        if ( typeid( int ) == typeid( T ) )
+        {
+            value = std::stoi( (*this)[key] );
+        }
+        else if ( typeid( unsigned int ) == typeid( T ) )
+        {
+            value = (unsigned int) std::stoul( (*this)[key], 0, 10 );
+        }
+        else if ( typeid( long ) == typeid( T ) )
+        {
+            value = std::stol( (*this)[key], 0, 10 );
+        }
+        else if ( typeid( unsigned long ) == typeid( T ) )
+        {
+            value = std::stoul( (*this)[key], 0, 10 );
+        }
+        else if ( typeid( long long ) == typeid( T ) )
+        {
+            value = std::stoll( (*this)[key], 0, 10 );
+        }
+        else if ( typeid( unsigned long long ) == typeid( T ) )
+        {
+            value = std::stoull( (*this)[key], 0, 10 );
+        }
+        else if ( typeid( float ) == typeid( T ) )
+        {
+            value = std::stof( (*this)[key], 0 );
+        }
+        else if ( typeid( double ) == typeid( T ) )
+        {
+            value = std::stod( (*this)[key], 0 );
+        }
+        else if ( typeid( long double ) == typeid( T ) )
+        {
+            value = std::stold( (*this)[key], 0 );
+        }
+    }
+    catch( const std::invalid_argument & e )
+    {
+        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
+    }
+    catch( const std::out_of_range & e )
+    {
+        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
+    }
+    
+    return value;
 }
 
 int Config::getInteger( std::string key )
 {
-    int value;
-
-    try
-    {
-        value = std::stoi( (*this)[key].c_str() );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<int>( key );
 }
 
 unsigned int Config::getUnsignedInteger( std::string key )
 {
-    unsigned int value;
-
-    try
-    {
-        value = (unsigned int) std::stoul( (*this)[key].c_str(), 0, 10 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<unsigned int>( key );
 }
 
 long Config::getLong( std::string key )
 {
-    long value;
-
-    try
-    {
-        value = std::stol( (*this)[key].c_str(), 0, 10 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<long>( key );
 }
 
 unsigned long Config::getUnsignedLong( std::string key )
 {
-    unsigned long value;
-
-    try
-    {
-        value = std::stoul( (*this)[key].c_str(), 0, 10 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<unsigned long>( key );
 }
 
 long long Config::getLongLong( std::string key )
 {
-    long long value;
-
-    try
-    {
-        value = std::stoll( (*this)[key].c_str(), 0, 10 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<long long>( key );
 }
 
 unsigned long long Config::getUnsignedLongLong( std::string key )
 {
-    unsigned long long value;
-
-    try
-    {
-        value = std::stoull( (*this)[key].c_str(), 0, 10 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<unsigned long long>( key );
 }
 
 float Config::getFloat( std::string key )
 {
-    float value;
-
-    try
-    {
-        value = std::stof( (*this)[key].c_str(), 0 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<float>( key );
 }
 
 double Config::getDouble( std::string key )
 {
-    double value;
-
-    try
-    {
-        value = std::stod( (*this)[key].c_str(), 0 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+    return getNumericValue<double>( key );
 }
 
 long double Config::getLongDouble( std::string key )
 {
-    long double value;
+    return getNumericValue<long double>( key );
+}
 
-    try
-    {
-        value = std::stold( (*this)[key].c_str(), 0 );
-    }
-    catch( const std::invalid_argument & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' can not be converted." );
-    }
-    catch( const std::out_of_range & e )
-    {
-        throw NumericConfigValueMalformedException( "Value for key '" + key + "' is out of range." );
-    }
-    
-    return value;
+bool Config::getBool( std::string key )
+{
+    return getInteger( key );
 }
